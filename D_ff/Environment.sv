@@ -36,3 +36,47 @@ class generator;
   endtask
 
 endclass 
+
+
+
+class driver;
+
+transaction tr;
+mailbox #(transaction) mbx;
+virtual dff_if vif;
+
+  function new(mailbox #(transaction) mbx);
+
+this.mbx = mbx;
+    
+  endfunction
+
+
+  task reset();
+
+vif.reset <= 1'b1;
+    repeat(5) @(posedge vif.clk);
+
+vif.reset <= 1'b0;
+    @(posedge vif.clk);
+    $display("[DRV] : reset done!!!");
+  endtask
+
+  task run();
+forever begin 
+  mbx.get(tr);
+  vif.din <= vif.dout;
+  @(posedge vif.clk);
+  tr.display();
+  vif.din <= 1'b0;
+  @(posedge vif.clk);
+end 
+
+  endtask
+
+
+
+
+
+
+endclass
