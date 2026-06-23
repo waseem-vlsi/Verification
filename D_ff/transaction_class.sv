@@ -17,6 +17,4 @@ rand logic d_in;
 
   endfunction
 
-
-
 endclass 
