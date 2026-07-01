@@ -31,13 +31,14 @@ endclass
 
 class driver ;
 
-  generator gr;
+ transaction tr;
   mailbox #(transaction) dgmbx;
-  virtual dif_if vif;
+  virtual sync_FIFO_if.drv vif;
 
-  function new (mailbox #(transaction) dgmbx);
+  function new (mailbox #(transaction) dgmbx, virtual sync_FIFO_if.drv vif);
     this.dgmbx = dgmbx;
-    gr = new();
+    this.vif = vif;
+    tr = new();
   endfunction
 
   task reset();
@@ -47,26 +48,42 @@ class driver ;
     @posedge vif.clock;
   endtask
 
-  task run();
-    forever begin 
-      dgmbx.get(tr);
-      if(vif.wr) begin 
-        vif.wr <= 1'b1;
-        vif.rd <= 1'b0;
-        vif.din <= tr.din;
-      end 
-      else if(vif.rd) begin 
-        vif.wr <= 1'b0;
-        vif.rd <= 1'b1;
-      end 
-      
+task run();
 
-    end 
-    
+  forever begin
 
-  endtask
+    dgmbx.get(tr);
+    tr.display("DRV");
+    @(negedge vif.clock);
+    if(tr.wr) begin
 
+      vif.wr  <= 1'b1;
+      vif.rd  <= 1'b0;
+      vif.din <= tr.din;
 
+    end
 
+    else if(tr.rd) begin
+
+      vif.wr <= 1'b0;
+      vif.rd <= 1'b1;
+      vif.din <= 5'd0;
+
+    end
+
+    else begin
+   $display("Invalid transaction");
+end
+
+    @(posedge vif.clock);
+
+    // clear signals
+    vif.wr  <= 1'b0;
+    vif.rd  <= 1'b0;
+    vif.din <= 5'd0;
+
+  end
+
+endtask
 
 endclass 
