@@ -9,6 +9,7 @@ class generator;
     this.gdmbx = gdmbx;
     this.gsmbx = gsmbx;
     tr = new();
+    trref = new();
   endfunction
 
 
@@ -19,7 +20,7 @@ class generator;
         $finish;
       end 
       gdmbx.put(tr.copy());
-      gsmbx.put(tr.copy());
+      gsmbx.put(trref.copy());
       
       $display("[Gen] : din = %0d",tr.din)
     end 
@@ -118,3 +119,30 @@ class monitor;
     end 
   endtask
 endclass 
+
+
+class scoreboard;
+
+  transaction tr;
+  transaction trref;
+  mailbox #(transaction) gsmbx;
+  mailbox #(transaction) msmbx;
+
+  function new(mailbox #(transaction) gsmbx, mailbox #(transaction) msmbx);
+    this.gsmbx = gsmbx;
+    this.msmbx = msmbx;
+    tr = new();  
+  endfunction
+
+  task run()
+    forever begin 
+      gsmbx.get(tr);
+      msmbx.get(trref);
+
+      if()
+    end 
+  endtask
+
+
+
+endclass
