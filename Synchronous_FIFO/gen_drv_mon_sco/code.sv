@@ -87,3 +87,34 @@ end
 endtask
 
 endclass 
+
+
+
+class monitor;
+  transaction tr;
+  mailbox #(transaction) msmbx;
+  virtual sync_FIFO_if.mon vif;
+
+  function new(mailbox #(transaction) msmbx, virtual sync_FIFO_if.mon vif);
+    this.msmbx = msmbx;
+    this.vif = vif;
+ 
+  endfunction
+
+  task run();
+    forever begin 
+      @(posedge vif.clock);
+      if(vif.wr || vif.rd) begin
+         tr = new();
+      tr.dout = vif.dout;
+      tr.full = vif.full;
+      tr.empty = vif.empty;
+      tr.wr = vif.wr;
+      tr.rd = vif.rd;
+      tr.din = vif.din;
+        $display("MON");
+      msmbx.put(tr);
+    end 
+    end 
+  endtask
+endclass 
