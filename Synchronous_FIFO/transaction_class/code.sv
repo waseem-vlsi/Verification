@@ -19,6 +19,10 @@ class transaction;
   function void display(input string tag);
     $display("[%0s] : din=%0d wr=%0b rd=%0b dout=%0d full=%0b empty=%0b",
           tag,din,wr,rd,dout,full,empty);
-
   endfunction
+
+  constraint c1 {
+     wr != rd;
+  }
+  
 endclass
