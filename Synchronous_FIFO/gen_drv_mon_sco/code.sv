@@ -4,12 +4,12 @@ class generator;
   mailbox #(transaction) gdmbx;
   mailbox #(transaction) gsmbx;
   int count = 0;
-
+  event next;
   function new(mailbox #(transaction) gdmbx, mailbox #(transaction) gsmbx);
     this.gdmbx = gdmbx;
     this.gsmbx = gsmbx;
     tr = new();
-    trref = new();
+  
   endfunction
 
 
@@ -20,9 +20,10 @@ class generator;
         $finish;
       end 
       gdmbx.put(tr.copy());
-      gsmbx.put(trref.copy());
+      gsmbx.put(tr.copy());
       
       $display("[Gen] : din = %0d",tr.din)
+      @(next);
     end 
   endtask
 endclass
@@ -105,6 +106,7 @@ class monitor;
   task run();
     forever begin 
       @(posedge vif.clock);
+      #1;
       if(vif.wr || vif.rd) begin
          tr = new();
       tr.dout = vif.dout;
@@ -125,24 +127,70 @@ class scoreboard;
 
   transaction tr;
   transaction trref;
+
   mailbox #(transaction) gsmbx;
   mailbox #(transaction) msmbx;
 
-  function new(mailbox #(transaction) gsmbx, mailbox #(transaction) msmbx);
+  logic [4:0] queue_for_fifo[$];
+  logic [4:0] temp;
+  event next;
+
+  function new(mailbox #(transaction) gsmbx,
+               mailbox #(transaction) msmbx);
+
     this.gsmbx = gsmbx;
     this.msmbx = msmbx;
-    tr = new();  
+    tr = new();
+    trref = new();
+
   endfunction
 
-  task run()
-    forever begin 
-      gsmbx.get(tr);
-      msmbx.get(trref);
 
-      if()
-    end 
+  task run();
+
+    forever begin
+
+      gsmbx.get(trref);
+      msmbx.get(tr);
+
+      // write operation
+      if(trref.wr) begin
+
+        queue_for_fifo.push_back(trref.din);
+
+        $display("[SCO] PASS : stored din = %0d",
+                  trref.din);
+
+      end
+
+
+      // read operation
+      else if(trref.rd) begin
+
+        if(queue_for_fifo.size() > 0) begin
+
+          temp = queue_for_fifo.pop_front();
+
+          if(temp == tr.dout)
+
+            $display("[SCO] PASS : Expected=%0d Actual=%0d",
+                     temp,tr.dout);
+
+          else
+
+            $display("[SCO] FAIL : Expected=%0d Actual=%0d",
+                     temp,tr.dout);
+
+        end
+
+        else
+
+          $display("[SCO] ERROR : Queue empty");
+
+      end
+        ->next;
+    end
+
   endtask
-
-
 
 endclass
