@@ -1,7 +1,6 @@
-interface dff_if;
+ interface dff_if;
     logic clock;
-    logic reset_n;
+    logic reset;
     logic din;
     logic dout;
-endinterface
-
+ endinterface
